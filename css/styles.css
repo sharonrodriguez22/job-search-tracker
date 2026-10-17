@@ -280,6 +280,12 @@ th {
   white-space: nowrap;
 }
 
+/* The applications table is wide: when the window has room (or the page is zoomed out), let it
+   use all of it instead of staying inside the 1280px column, so no horizontal scroll is needed. */
+main:has(.table-wrap.tall) {
+  max-width: none;
+}
+
 /* Long tables scroll inside their own box so the header row stays visible (sticky only works
    relative to the nearest scrolling ancestor, and .table-wrap already scrolls sideways). */
 .table-wrap.tall {
