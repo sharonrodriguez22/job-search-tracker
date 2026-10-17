@@ -295,5 +295,27 @@ export function renderApplications(root, ctx) {
   );
 
   root.append(toolbar, table);
+  fitTableHeight(table);
   drawRows();
+}
+
+/**
+ * Sizes the scrolling table box to the space left in the window, so the page itself does not
+ * also scroll (a second scrollbar). The CSS max-height is only the fallback until this runs.
+ */
+function fitTableHeight(wrap) {
+  const fit = () => {
+    if (!wrap.isConnected) return;
+    const footer = document.querySelector('.site-footer');
+    const reserved = (footer ? footer.offsetHeight : 0) + 32; // main's bottom padding and a gap
+    const top = wrap.getBoundingClientRect().top + window.scrollY;
+    wrap.style.maxHeight = `${Math.max(320, window.innerHeight - top - reserved)}px`;
+  };
+  const onResize = () => {
+    if (!wrap.isConnected) window.removeEventListener('resize', onResize);
+    else fit();
+  };
+  window.addEventListener('resize', onResize);
+  // The view may not be attached to the page yet when this runs, so measure on the next frame.
+  requestAnimationFrame(fit);
 }
