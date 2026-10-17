@@ -280,6 +280,22 @@ th {
   white-space: nowrap;
 }
 
+/* Long tables scroll inside their own box so the header row stays visible (sticky only works
+   relative to the nearest scrolling ancestor, and .table-wrap already scrolls sideways). */
+.table-wrap.tall {
+  max-height: calc(100vh - 190px);
+  min-height: 320px;
+  overflow: auto;
+}
+
+.table-wrap.tall thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+  box-shadow: 0 1px 0 var(--border);
+}
+
 tbody tr:last-child td {
   border-bottom: 0;
 }

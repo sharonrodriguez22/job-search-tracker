@@ -285,7 +285,7 @@ export function renderApplications(root, ctx) {
   const header = ['Empresa', 'Puesto', 'Estado', 'Canal', 'CV', 'Postulada', 'Seguimiento', 'Notas', ''];
   const table = el(
     'div',
-    { class: 'table-wrap' },
+    { class: 'table-wrap tall' },
     el(
       'table',
       {},
