@@ -1,0 +1,12 @@
+{
+  "format": "job-search-tracker/export",
+  "version": 1,
+  "settings": { "channels": ["LinkedIn", "Referido"], "cv_options": ["General"], "follow_up_days": 5 },
+  "applications": [
+    { "company": "Example Corp", "role": "QA Analyst", "channel": "LinkedIn", "status": "Postulada", "applied_on": "2026-10-01", "notes": "Sample row" }
+  ],
+  "templates": [
+    { "name": "Quick follow-up", "subject": "Following up: [puesto]", "body": "Hello, I applied to [puesto] at [empresa] on [fecha] and wanted to confirm you received my application." }
+  ],
+  "alert_keywords": [ { "keyword": "qa", "kind": "search", "reason": "Main role" } ]
+}

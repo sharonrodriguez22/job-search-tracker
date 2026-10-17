@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+.DS_Store
+Thumbs.db
+*.log
+
+# Personal data: keep it local, import it from the app. Never commit it.
+data/*.csv
