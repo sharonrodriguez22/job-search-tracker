@@ -1,11 +1,11 @@
 import * as api from '../api.js';
-import { ACTIVE_STATUSES, STATUSES } from '../constants.js';
+import { ACTIVE_STATUSES, AREAS, STATUSES } from '../constants.js';
 import { CSV_COLUMNS, parseCSV, rowsToApplications, toCSV } from '../csv.js';
 import { safeUrl, statusPatch } from '../logic.js';
 import { el, clear, formatDateTime, guard, select, toast, todayISO } from '../ui.js';
 
 // Filters survive tab switches.
-const filters = { text: '', status: '', channel: '' };
+const filters = { text: '', status: '', channel: '', area: AREAS[0].value };
 
 const dupKey = (app) => `${app.company}|${app.role}`.toLowerCase();
 
@@ -14,8 +14,11 @@ export function renderApplications(root, ctx) {
   const tbody = el('tbody');
   const counter = el('span', { class: 'muted' });
 
+  const inArea = (app) => (app.area ?? AREAS[0].value) === filters.area;
+
   const visible = () =>
     state.apps.filter((app) => {
+      if (!inArea(app)) return false;
       const text = filters.text.trim().toLowerCase();
       if (text && !`${app.company} ${app.role} ${app.notes ?? ''}`.toLowerCase().includes(text)) {
         return false;
@@ -28,10 +31,11 @@ export function renderApplications(root, ctx) {
   function drawRows() {
     clear(tbody);
     const rows = visible();
-    counter.textContent = `${rows.length} de ${state.apps.length}`;
+    counter.textContent = `${rows.length} de ${state.apps.filter(inArea).length}`;
+    drawAreaTabs();
     if (!rows.length) {
       tbody.append(
-        el('tr', {}, el('td', { colspan: 9, class: 'empty' }, 'No hay postulaciones para mostrar.')),
+        el('tr', {}, el('td', { colspan: 10, class: 'empty' }, 'No hay postulaciones para mostrar.')),
       );
       return;
     }
@@ -85,7 +89,16 @@ export function renderApplications(root, ctx) {
           placeholder: 'Sin CV',
         }),
       ),
-      el('td', {}, dateInput(app.applied_on, `Fecha de postulación de ${app.company}`, (v) => patch(app, { applied_on: v }))),
+      el(
+        'td',
+        {},
+        el(
+          'select',
+          { 'aria-label': `Área de ${app.company}`, onChange: (event) => patch(app, { area: event.target.value }) },
+          AREAS.map((a) => el('option', { value: a.value, selected: a.value === (app.area ?? AREAS[0].value) }, a.label)),
+        ),
+      ),
+      el('td', {}, dateInput(app.applied_on, `Fecha del último movimiento de ${app.company} (postulación, entrevista, etc.)`, (v) => patch(app, { applied_on: v }))),
       el('td', {}, dateInput(app.next_follow_up, `Próximo seguimiento de ${app.company}`, (v) => patch(app, { next_follow_up: v }))),
       el(
         'td',
@@ -164,6 +177,7 @@ export function renderApplications(root, ctx) {
       { class: 'form-grid' },
       field('Empresa *', el('input', { type: 'text', name: 'company', required: true })),
       field('Puesto *', el('input', { type: 'text', name: 'role', required: true })),
+      field('Área', el('select', { name: 'area' }, AREAS.map((a) => el('option', { value: a.value, selected: a.value === filters.area }, a.label)))),
       field('Estado', select(STATUSES, 'Pendiente', noop, { name: 'status' })),
       field('Canal', select(state.settings.channels, state.settings.channels[0], noop, { name: 'channel' })),
       field('CV a enviar', select(['', ...state.settings.cv_options], '', noop, { name: 'cv', placeholder: 'Sin CV' })),
@@ -190,6 +204,7 @@ export function renderApplications(root, ctx) {
         role: text('role'),
         channel: text('channel'),
         cv: text('cv') || null,
+        area: text('area') || AREAS[0].value,
         url: text('url') || null,
         notes: text('notes') || null,
         ...statusPatch({}, status, todayISO(), state.settings.follow_up_days),
@@ -253,6 +268,31 @@ export function renderApplications(root, ctx) {
     },
   });
 
+  const areaTabs = el('div', { class: 'subtabs', role: 'tablist', 'aria-label': 'Área' });
+  function drawAreaTabs() {
+    clear(areaTabs);
+    for (const area of AREAS) {
+      const count = state.apps.filter((app) => (app.area ?? AREAS[0].value) === area.value).length;
+      areaTabs.append(
+        el(
+          'button',
+          {
+            class: 'subtab',
+            type: 'button',
+            role: 'tab',
+            'aria-selected': String(area.value === filters.area),
+            onClick: () => {
+              filters.area = area.value;
+              drawRows();
+            },
+          },
+          `${area.label} `,
+          el('span', { class: 'count' }, String(count)),
+        ),
+      );
+    }
+  }
+
   const toolbar = el(
     'div',
     { class: 'toolbar' },
@@ -282,7 +322,7 @@ export function renderApplications(root, ctx) {
     fileInput,
   );
 
-  const header = ['Empresa', 'Puesto', 'Estado', 'Canal', 'CV', 'Postulada', 'Seguimiento', 'Notas', ''];
+  const header = ['Empresa', 'Puesto', 'Estado', 'Canal', 'CV', 'Área', 'Movimiento', 'Seguimiento', 'Notas', ''];
   const table = el(
     'div',
     { class: 'table-wrap tall' },
@@ -294,7 +334,7 @@ export function renderApplications(root, ctx) {
     ),
   );
 
-  root.append(toolbar, table);
+  root.append(areaTabs, toolbar, table);
   fitTableHeight(table);
   drawRows();
 }

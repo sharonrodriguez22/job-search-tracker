@@ -1,6 +1,7 @@
 // Minimal CSV reader/writer (RFC 4180 quoting) used for import and export.
 
-import { STATUSES } from './constants.js';
+import { AREAS, STATUSES } from './constants.js';
+import { areaFromCv } from './logic.js';
 
 export const CSV_COLUMNS = [
   'company',
@@ -8,6 +9,7 @@ export const CSV_COLUMNS = [
   'channel',
   'url',
   'cv',
+  'area',
   'status',
   'applied_on',
   'next_follow_up',
@@ -89,12 +91,15 @@ export function rowsToApplications(rows) {
         const value = get(name);
         return value && DATE.test(value) ? value : null;
       };
+      const cv = get('cv');
+      const area = get('area');
       return {
         company: get('company'),
         role: get('role'),
         channel: get('channel') ?? 'Otro',
         url: get('url'),
-        cv: get('cv'),
+        cv,
+        area: AREAS.some((a) => a.value === area) ? area : areaFromCv(cv),
         status: STATUSES.includes(status) ? status : 'Pendiente',
         applied_on: date('applied_on'),
         next_follow_up: date('next_follow_up'),

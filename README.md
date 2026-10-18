@@ -34,7 +34,7 @@ Automatic rules:
 ### 1. Create the Supabase project
 
 1. Create a free project at <https://supabase.com>. If you will open it to other people, pick a region deliberately (see the checklist at the end; the choice matters for data-protection law).
-2. Open **SQL Editor** and run the files in [`supabase/migrations`](supabase/migrations) **in order**: `001_initial.sql`, `002_user_settings.sql`, `003_privacy_and_limits.sql`. Run each one once (003 adds constraints that cannot be added twice). They create the tables, triggers, Row Level Security policies, the consent log, the account-deletion function and per-account size limits.
+2. Open **SQL Editor** and run the files in [`supabase/migrations`](supabase/migrations) **in order**: `001_initial.sql`, `002_user_settings.sql`, `003_privacy_and_limits.sql`, `004_ingest_tokens.sql`, `005_application_area.sql`. Run each one once (003 adds constraints that cannot be added twice). They create the tables, triggers, Row Level Security policies, the consent log, the account-deletion function and per-account size limits.
 3. Open **Project Settings > API Keys** and copy the **Project URL** and the **publishable key** (`sb_publishable_...`). Never use or share a secret or `service_role` key. Supabase documents that the legacy `anon` key still works but is planned to be deprecated by the end of 2026, so prefer the publishable key; if sign-in fails with it, the legacy `anon` key is a fallback for now.
 
 ### 2. Configure authentication
@@ -73,9 +73,19 @@ The **Ajustes** tab lets each user edit the channels, the CV types and the days 
 
 Schema changes go in a new numbered file under `supabase/migrations` (`004_...sql`, and so on), written to be safe to run once on top of the previous ones.
 
+## Automation tokens (optional)
+
+An automated job (for example a daily search run) can add applications and read statuses without your password:
+
+1. Run `004_ingest_tokens.sql`, then open **Ajustes > Tokens de automatización** and create a token. It is shown once; only its SHA-256 hash is stored.
+2. The job calls two public RPCs with the publishable key plus the token:
+   - `POST {SUPABASE_URL}/rest/v1/rpc/ingest_applications` with `{"p_token": "...", "p_rows": [{"company", "role", "channel", "url", "notes", "area"}]}` (`area` is optional, `Tech` or `Farmacia`, default `Tech`; max 50 rows per call; rows always enter as *Pendiente*; duplicates by company+role or URL are skipped and reported).
+   - `POST {SUPABASE_URL}/rest/v1/rpc/list_applications_for_sync` with `{"p_token": "..."}` returns `company, role, url, status, area, updated_at` so the job can respect the statuses you set in the app.
+3. A token cannot edit or delete anything. Revoke it from the same screen if it leaks. Never commit it to the repository.
+
 ## CSV format
 
-Header: `company,role,channel,url,cv,status,applied_on,next_follow_up,notes`
+Header: `company,role,channel,url,cv,area,status,applied_on,next_follow_up,notes`. `area` is `Tech` or `Farmacia` (if missing it is inferred from `cv`). `applied_on` is shown as *Movimiento* in the app: the date of the last relevant event (application sent, interview, ...).
 
 - `company` and `role` are required.
 - `status` must be one of the app statuses; otherwise it becomes *Pendiente*.

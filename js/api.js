@@ -100,6 +100,21 @@ export function deleteAccount() {
   return unwrap(db().rpc('delete_my_account'));
 }
 
+// ------------------------------------------------------------- ingest tokens
+
+export function listIngestTokens() {
+  return unwrap(db().from('ingest_tokens').select('id, label, created_at, last_used_at, revoked_at').order('created_at', { ascending: false }));
+}
+
+/** Returns the plain token. It is shown once and never stored in readable form. */
+export function createIngestToken(label) {
+  return unwrap(db().rpc('create_ingest_token', { p_label: label }));
+}
+
+export function revokeIngestToken(id) {
+  return unwrap(db().rpc('revoke_ingest_token', { p_id: id }));
+}
+
 // ------------------------------------------------------------------ consents
 
 export function listConsents() {

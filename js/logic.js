@@ -114,3 +114,8 @@ export function funnelStats(apps, events, channelList = CHANNELS) {
 
   return { stages, byStatus, byChannel };
 }
+
+/** Area to assume for rows that come without one (old files): pharmacy and administrative CVs go to Farmacia. */
+export function areaFromCv(cv) {
+  return cv === 'Farmacia' || cv === 'Administrativo' ? 'Farmacia' : 'Tech';
+}

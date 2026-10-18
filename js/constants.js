@@ -2,12 +2,19 @@
 
 export const STATUSES = [
   'Pendiente',
+  'Interesa',
   'Postulada',
   'En proceso',
   'Entrevista',
   'Oferta',
   'Descartada',
   'Aviso cerrado',
+];
+
+// Areas shown as separate tabs. The value is stored in the database; the label is shown.
+export const AREAS = [
+  { value: 'Tech', label: 'Tech (QA, Datos)' },
+  { value: 'Farmacia', label: 'Farmacia / Administrativo' },
 ];
 
 // Statuses in which a follow-up still makes sense.
@@ -30,7 +37,7 @@ export const FOLLOW_UP_DAYS = 5;
 
 // Version of the privacy notice (privacy.html). Change it whenever the notice changes in a way
 // users must accept again: everyone is asked for consent on their next sign-in.
-export const PRIVACY_VERSION = '2026-10-17';
+export const PRIVACY_VERSION = '2026-10-18';
 
 // Limits shared by the forms and the JSON import. The database enforces its own limits too.
 export const LIMITS = {

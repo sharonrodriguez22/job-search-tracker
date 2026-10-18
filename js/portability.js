@@ -1,7 +1,7 @@
 // Export and import of a user's data as one JSON document. Pure functions: no DOM, no network.
 
-import { LIMITS, STATUSES } from './constants.js';
-import { safeUrl } from './logic.js';
+import { AREAS, LIMITS, STATUSES } from './constants.js';
+import { areaFromCv, safeUrl } from './logic.js';
 
 export const EXPORT_FORMAT = 'job-search-tracker/export';
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -88,12 +88,14 @@ export function parseImport(text) {
     const url = textField(row.url, LIMITS.url, warnings, 'Enlace');
     if (url && !safeUrl(url)) warnings.add('Se quitaron enlaces que no empiezan con http o https.');
     const date = (value) => (typeof value === 'string' && DATE.test(value) ? value : null);
+    const cv = textField(row.cv, LIMITS.option, warnings, 'CV') || null;
     applications.push({
       company,
       role,
       channel: textField(row.channel, LIMITS.option, warnings, 'Canal') || 'Otro',
       url: url && safeUrl(url) ? url : null,
-      cv: textField(row.cv, LIMITS.option, warnings, 'CV') || null,
+      cv,
+      area: AREAS.some((a) => a.value === row.area) ? row.area : areaFromCv(cv),
       status: STATUSES.includes(row.status) ? row.status : 'Pendiente',
       applied_on: date(row.applied_on),
       next_follow_up: date(row.next_follow_up),

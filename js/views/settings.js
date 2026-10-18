@@ -222,6 +222,124 @@ export function renderSettings(root, ctx) {
     );
   }
 
+
+  // ---- automation tokens
+
+  function tokensSection() {
+    const list = el('div', { 'aria-live': 'polite' });
+    const reveal = el('div', { 'aria-live': 'polite' });
+    const labelInput = el('input', { type: 'text', maxlength: 60, placeholder: 'Ej.: búsqueda diaria', 'aria-label': 'Nombre del token' });
+    let tokens = [];
+
+    const fmt = (iso) => (iso ? new Date(iso).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : 'nunca');
+
+    function drawList() {
+      clear(list);
+      if (!tokens.length) {
+        list.append(el('p', { class: 'muted' }, 'Todavía no creaste ningún token.'));
+        return;
+      }
+      list.append(
+        el(
+          'ul',
+          { class: 'token-list' },
+          tokens.map((t) =>
+            el(
+              'li',
+              {},
+              el('strong', {}, t.label),
+              el('span', { class: 'muted small' }, ` · creado ${fmt(t.created_at)} · último uso: ${fmt(t.last_used_at)}`),
+              t.revoked_at
+                ? el('span', { class: 'muted small' }, ` · revocado ${fmt(t.revoked_at)}`)
+                : el(
+                    'button',
+                    {
+                      class: 'btn ghost small',
+                      type: 'button',
+                      onClick: async () => {
+                        if (!window.confirm(`¿Revocar el token "${t.label}"? Lo que lo use dejará de funcionar.`)) return;
+                        const done = await guard(async () => {
+                          await api.revokeIngestToken(t.id);
+                          return true;
+                        });
+                        if (done) {
+                          await load();
+                          toast('Token revocado');
+                        }
+                      },
+                    },
+                    'Revocar',
+                  ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    async function load() {
+      const rows = await guard(() => api.listIngestTokens());
+      if (rows) {
+        tokens = rows;
+        drawList();
+      }
+    }
+
+    async function create() {
+      const label = labelInput.value.trim();
+      if (!label) {
+        toast('Poné un nombre para reconocer el token.', 'error');
+        return;
+      }
+      const token = await guard(() => api.createIngestToken(label));
+      if (!token) return;
+      labelInput.value = '';
+      clear(reveal);
+      const field = el('input', { type: 'text', readonly: true, value: token, 'aria-label': 'Token nuevo', class: 'token-field' });
+      reveal.append(
+        el(
+          'div',
+          { class: 'notice' },
+          el('p', {}, el('strong', {}, 'Copiá el token ahora. No se vuelve a mostrar.')),
+          field,
+          el(
+            'button',
+            {
+              class: 'btn',
+              type: 'button',
+              onClick: async () => {
+                try {
+                  await navigator.clipboard.writeText(token);
+                  toast('Token copiado');
+                } catch {
+                  field.select();
+                  toast('Seleccioné el token: copialo con Ctrl+C', 'error');
+                }
+              },
+            },
+            'Copiar',
+          ),
+        ),
+      );
+      await load();
+    }
+
+    load();
+
+    return el(
+      'section',
+      { class: 'card' },
+      el('h2', {}, 'Tokens de automatización'),
+      el(
+        'p',
+        { class: 'muted' },
+        'Un token permite que un proceso automático (por ejemplo la búsqueda diaria) agregue postulaciones nuevas como "Pendiente" y lea los estados de tus postulaciones. No puede modificar ni borrar nada, ni ver tus plantillas, ajustes o contraseña. Tratalo como una contraseña: no lo publiques ni lo subas al repositorio. Si se filtra, revocalo acá.',
+      ),
+      el('div', { class: 'toolbar' }, labelInput, el('button', { class: 'btn', type: 'button', onClick: create }, 'Crear token')),
+      reveal,
+      list,
+    );
+  }
+
   function dangerSection() {
     const email = state.session.user.email ?? '';
     const confirmInput = el('input', { type: 'email', autocomplete: 'off', placeholder: email, 'aria-label': 'Escribí tu email para confirmar' });
@@ -261,6 +379,7 @@ export function renderSettings(root, ctx) {
       listEditor('Tipos de CV', 'Las versiones de CV que tenés. Aparecen en la columna CV.', 'cv_options'),
       followUpSection(),
       passwordSection(),
+      tokensSection(),
       dataSection(),
       dangerSection(),
     );
