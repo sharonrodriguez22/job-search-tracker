@@ -115,7 +115,21 @@ export function funnelStats(apps, events, channelList = CHANNELS) {
   return { stages, byStatus, byChannel };
 }
 
-/** Area to assume for rows that come without one (old files): pharmacy and administrative CVs go to Farmacia. */
-export function areaFromCv(cv) {
-  return cv === 'Farmacia' || cv === 'Administrativo' ? 'Farmacia' : 'Tech';
+const TECH_WORDS = /\b(qa|qe|tester|testers|testing|test|sdet|cypress|selenium|playwright|developer|software|datos|data|bi|sql|python|javascript|devops|sistemas|it)\b|\b(automati|desarroll|program)/;
+const PHARMA_WORDS = /\b(recepcionista|stock|inventario|deposito|auxiliar|clinica|sanatorio|compras)\b|\b(farmaci|droguer|administrativ|facturaci|licitaci|secretari|hospital|medicament|oncolog)/;
+
+/**
+ * Picks the area from the posting text: only tech words -> Tech, only pharmacy/administrative
+ * words -> Farmacia, both or neither -> 'A confirmar' (the user decides). An explicit CV choice
+ * wins over the text. Keep the word lists in sync with guess_area() in migration 006.
+ */
+export function guessArea({ company = '', role = '', notes = '', cv = '' } = {}) {
+  if (cv === 'Farmacia' || cv === 'Administrativo') return 'Farmacia';
+  if (cv === 'QA') return 'Tech';
+  const text = `${company} ${role} ${notes}`.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const tech = TECH_WORDS.test(text);
+  const pharma = PHARMA_WORDS.test(text);
+  if (tech && !pharma) return 'Tech';
+  if (pharma && !tech) return 'Farmacia';
+  return 'A confirmar';
 }

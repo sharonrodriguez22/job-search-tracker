@@ -15,6 +15,7 @@ export const STATUSES = [
 export const AREAS = [
   { value: 'Tech', label: 'Tech (QA, Datos)' },
   { value: 'Farmacia', label: 'Farmacia / Administrativo' },
+  { value: 'A confirmar', label: 'A confirmar' },
 ];
 
 // Statuses in which a follow-up still makes sense.

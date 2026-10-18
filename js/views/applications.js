@@ -1,7 +1,7 @@
 import * as api from '../api.js';
 import { ACTIVE_STATUSES, AREAS, STATUSES } from '../constants.js';
 import { CSV_COLUMNS, parseCSV, rowsToApplications, toCSV } from '../csv.js';
-import { safeUrl, statusPatch } from '../logic.js';
+import { guessArea, safeUrl, statusPatch } from '../logic.js';
 import { el, clear, formatDateTime, guard, select, toast, todayISO } from '../ui.js';
 
 // Filters survive tab switches.
@@ -177,7 +177,7 @@ export function renderApplications(root, ctx) {
       { class: 'form-grid' },
       field('Empresa *', el('input', { type: 'text', name: 'company', required: true })),
       field('Puesto *', el('input', { type: 'text', name: 'role', required: true })),
-      field('Área', el('select', { name: 'area' }, AREAS.map((a) => el('option', { value: a.value, selected: a.value === filters.area }, a.label)))),
+      field('Área', el('select', { name: 'area' }, [el('option', { value: '', selected: true }, 'Detectar automáticamente'), ...AREAS.map((a) => el('option', { value: a.value }, a.label))])),
       field('Estado', select(STATUSES, 'Pendiente', noop, { name: 'status' })),
       field('Canal', select(state.settings.channels, state.settings.channels[0], noop, { name: 'channel' })),
       field('CV a enviar', select(['', ...state.settings.cv_options], '', noop, { name: 'cv', placeholder: 'Sin CV' })),
@@ -199,17 +199,20 @@ export function renderApplications(root, ctx) {
       const data = new FormData(form);
       const text = (name) => String(data.get(name) ?? '').trim();
       const status = text('status');
+      const area =
+        text('area') || guessArea({ company: text('company'), role: text('role'), notes: text('notes'), cv: text('cv') });
       const newRow = {
         company: text('company'),
         role: text('role'),
         channel: text('channel'),
         cv: text('cv') || null,
-        area: text('area') || AREAS[0].value,
+        area,
         url: text('url') || null,
         notes: text('notes') || null,
         ...statusPatch({}, status, todayISO(), state.settings.follow_up_days),
       };
-      const created = await guard(() => api.createApplications([newRow]), 'Postulación agregada');
+      const areaLabel = AREAS.find((a) => a.value === area)?.label ?? area;
+      const created = await guard(() => api.createApplications([newRow]), `Postulación agregada en "${areaLabel}"`);
       if (created) {
         state.apps = [...created, ...state.apps];
         dialog.close();
@@ -273,6 +276,8 @@ export function renderApplications(root, ctx) {
     clear(areaTabs);
     for (const area of AREAS) {
       const count = state.apps.filter((app) => (app.area ?? AREAS[0].value) === area.value).length;
+      // 'A confirmar' only shows up while it has something in it (or is the open tab).
+      if (area.value === 'A confirmar' && !count && filters.area !== area.value) continue;
       areaTabs.append(
         el(
           'button',
