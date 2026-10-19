@@ -58,7 +58,7 @@ Edit [`js/config.js`](js/config.js) and paste the Project URL and the publishabl
 
 ### 5. Complete the privacy notice
 
-Open [`privacy.html`](privacy.html) and fill every `[COMPLETAR]` placeholder (responsible party, address, contact email, hosting region, transfer basis, email provider, backup retention), then remove the draft banner. It is a draft, not legal advice. When the text changes in substance, change the version in **both** `privacy.html` (`#policy-version`) and `PRIVACY_VERSION` in `js/constants.js`: every user is asked to accept the new version at their next sign-in.
+Open [`privacy.html`](privacy.html) and review the notice. The responsible party, contact email, hosting region (`eu-west-1`, Ireland) and email provider are filled in; the legal basis for the international transfer and the provider's backup retention are marked as pending and need a legal review before opening the app to the public. Remove the draft banner once those are settled. It is a draft, not legal advice. When the text changes in substance, change the version in **both** `privacy.html` (`#policy-version`) and `PRIVACY_VERSION` in `js/constants.js`: every user is asked to accept the new version at their next sign-in.
 
 ### 6. Create your account and load your data
 

@@ -38,7 +38,7 @@ export const FOLLOW_UP_DAYS = 5;
 
 // Version of the privacy notice (privacy.html). Change it whenever the notice changes in a way
 // users must accept again: everyone is asked for consent on their next sign-in.
-export const PRIVACY_VERSION = '2026-10-18';
+export const PRIVACY_VERSION = '2026-10-19';
 
 // Limits shared by the forms and the JSON import. The database enforces its own limits too.
 export const LIMITS = {
